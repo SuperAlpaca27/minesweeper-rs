@@ -27,25 +27,29 @@ impl std::ops::Add for Position {
 }
 
 #[derive(Debug)]
-pub struct Minefield<const W: usize, const H: usize> {
-    hidden_field: [[Tile; W]; H],
-    shown_field: [[TileState; W]; H],
+pub struct Minefield {
+    pub hidden_field: Vec<Vec<Tile>>,
+    pub shown_field: Vec<Vec<TileState>>,
+    width: usize,
+    height: usize,
 }
 
-impl<const W: usize, const H: usize> Minefield<W, H> {
-    pub fn new() -> Self {
+impl Minefield {
+    pub fn new(width: usize, height: usize) -> Self {
         Self {
-            hidden_field: [[Default::default(); W]; H],
-            shown_field: [[Default::default(); W]; H],
+            hidden_field: vec![vec![Default::default(); width]; height],
+            shown_field: vec![vec![Default::default(); width]; height],
+            width,
+            height,
         }
     }
 
     pub fn width(&self) -> usize {
-        W
+        self.width
     }
 
     pub fn height(&self) -> usize {
-        H
+        self.height
     }
 
     pub fn display_field(&self) {
@@ -55,9 +59,9 @@ impl<const W: usize, const H: usize> Minefield<W, H> {
         }
         println!();
 
-        for y in 0..self.height() {
+        for y in 0..self.height {
             print!("{: >2} ", y);
-            for x in 0..self.width() {
+            for x in 0..self.width {
                 if self.shown_field[y][x] == TileState::Known {
                     print!("{} ", self.hidden_field[y][x])
                 } else {
@@ -70,13 +74,13 @@ impl<const W: usize, const H: usize> Minefield<W, H> {
 
     pub fn display_hidden_field(&self) {
         print!("  ");
-        for x in 0..self.width() {
+        for x in 0..self.width {
             print!("{} ", x);
         }
         println!();
-        for y in 0..self.height() {
+        for y in 0..self.height {
             print!("{} ", y);
-            for x in 0..self.width() {
+            for x in 0..self.width {
                 print!("{} ", self.hidden_field[y][x])
             }
             println!();
@@ -84,14 +88,14 @@ impl<const W: usize, const H: usize> Minefield<W, H> {
     }
 
     pub fn generate_mines(&mut self, num_mines: usize) {
-        assert!(num_mines <= self.width() * self.height());
+        assert!(num_mines <= self.width() * self.height);
         let mut rng = rand::thread_rng();
         let mine_ind: Vec<usize> =
-            rand::seq::index::sample(&mut rng, self.width() * self.height(), num_mines).into_vec();
+            rand::seq::index::sample(&mut rng, self.width * self.height, num_mines).into_vec();
 
         for i in mine_ind {
-            let y = i / self.width();
-            let x = i - (y * self.width());
+            let y = i / self.width;
+            let x = i - (y * self.width);
             let pos = Position {
                 x: x.try_into().unwrap(),
                 y: y.try_into().unwrap(),
@@ -121,7 +125,6 @@ impl<const W: usize, const H: usize> Minefield<W, H> {
                             Tile::Empty => Some(Tile::Number(1)),
                             _ => None,
                         };
-
                         if let Some(t) = temp_tile {
                             *tile = t;
                         }
@@ -132,9 +135,13 @@ impl<const W: usize, const H: usize> Minefield<W, H> {
     }
 
     pub fn sweep_at(&mut self, x: usize, y: usize) -> Option<&Tile> {
+        if x > self.width || y > self.height {
+            return None;
+        }
+
         // Can't sweep if flagged
         if self.shown_field[y][x] == TileState::Unknown(true) {
-            return None
+            return None;
         }
 
         self.shown_field[y][x] = TileState::Known;
@@ -166,11 +173,8 @@ impl<const W: usize, const H: usize> Minefield<W, H> {
             let x = pos.x as usize;
             let y = pos.y as usize;
 
-            match self.hidden_field[y][x] {
-                Tile::Empty => {
-                    self.shown_field[y][x] = TileState::Known;
-                }
-                _ => (),
+            if self.hidden_field[y][x] == Tile::Empty {
+                self.shown_field[y][x] = TileState::Known;
             }
 
             let dirs = [
@@ -183,44 +187,38 @@ impl<const W: usize, const H: usize> Minefield<W, H> {
             for dir in dirs {
                 let p = pos + dir;
                 if p.x >= 0
-                    && p.x < self.width().try_into().unwrap()
+                    && p.x < self.width.try_into().unwrap()
                     && p.y >= 0
-                    && p.y < self.height().try_into().unwrap()
-                {
-                    if !explored.contains(&p) {
-                        let x = p.x as usize;
-                        let y = p.y as usize;
-                        match self.hidden_field[y][x] {
-                            Tile::Empty => {
-                                stack.push(p);
-                                explored.insert(p);
-                            }
-                            Tile::Number(_) => {
-                                explored.insert(p);
-                                self.shown_field[y][x] = TileState::Known;
-                            }
-                            _ => (),
+                    && p.y < self.height.try_into().unwrap() && !explored.contains(&p) {
+                    let x = p.x as usize;
+                    let y = p.y as usize;
+                    match self.hidden_field[y][x] {
+                        Tile::Empty => {
+                            stack.push(p);
+                            explored.insert(p);
                         }
+                        Tile::Number(_) => {
+                            explored.insert(p);
+                            self.shown_field[y][x] = TileState::Known;
+                        }
+                        _ => (),
                     }
                 }
             }
         }
 
-        return Some(start_tile);
+        Some(start_tile)
     }
 
     pub fn check_win(&self) -> bool {
-        for y in 0..self.height() {
-            for x in 0..self.width() {
+        for y in 0..self.height {
+            for x in 0..self.width {
                 let shown = &self.shown_field[y][x];
-                match *shown {
-                    TileState::Unknown(_) => {
-                        let hidden = &self.hidden_field[y][x];
-                        if *hidden != Tile::Mine {
-                            return false;
-                        }
+                if let TileState::Unknown(_) = *shown {
+                    let hidden = &self.hidden_field[y][x];
+                    if *hidden != Tile::Mine {
+                        return false;
                     }
-                    _ => (),
                 }
             }
         }
@@ -228,11 +226,12 @@ impl<const W: usize, const H: usize> Minefield<W, H> {
     }
 
     pub fn toggle_flag(&mut self, x: usize, y: usize) {
-        match self.shown_field[y][x] {
-            TileState::Unknown(flag) => {
-                self.shown_field[y][x] = TileState::Unknown(!flag);
-            }
-            _ => (),
+        if x > self.width || y > self.height {
+            return;
+        }
+
+        if let TileState::Unknown(flag) = self.shown_field[y][x] {
+            self.shown_field[y][x] = TileState::Unknown(!flag);
         };
     }
 }
@@ -275,8 +274,6 @@ pub enum Tile {
 impl Display for Tile {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            //Tile::Unknown(false) => write!(f, "{}", "U".grey()),
-            //Tile::Unknown(true) => write!(f, "{}", "F".green()),
             Tile::Empty => write!(f, "{}", "E".blue()),
             Tile::Number(n) => write!(f, "{}", n.to_string().dark_blue()),
             Tile::Mine => write!(f, "{}", "X".red()),
