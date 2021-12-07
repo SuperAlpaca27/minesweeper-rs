@@ -23,7 +23,7 @@ fn get_user_input<T: FromStr + Default>(message: &str) -> T {
 fn main() {
     const WIDTH: usize = 10;
     const HEIGHT: usize = 10;
-    const MINE_PCT: f64 = 0.2;
+    const MINE_PCT: f64 = 0.1;
     let mut game = Minefield::new(WIDTH, HEIGHT);
 
     game.generate_mines((MINE_PCT * (WIDTH * HEIGHT) as f64) as usize);
@@ -31,12 +31,12 @@ fn main() {
     println!("{}, {}", game.width(), game.height());
     game.display_field();
     println!("{:=<1$}", "", WIDTH * 2 - 1);
-    game.display_hidden_field();
+    //game.display_hidden_field();
 
     while !game.check_win() {
-        let x: usize = get_user_input("Enter x: ");
-        let y: usize = get_user_input("Enter y: ");
-        let flag: String = get_user_input("Use flag?: ");
+        let x: usize = get_user_input("Enter x (col): ");
+        let y: usize = get_user_input("Enter y (row): ");
+        let flag: String = get_user_input("Use flag (F)?: ");
 
         print!("\x1B[2J\x1B[1;1H");
         println!("{}, {}", game.width(), game.height());
@@ -48,14 +48,14 @@ fn main() {
                 println!("Hit mine!");
                 game.display_field();
                 println!("{:=<1$}", "", WIDTH * 2 - 1);
-                game.display_hidden_field();
+                //game.display_hidden_field();
                 break;
             };
         }
 
         game.display_field();
         println!("{:=<1$}", "", WIDTH * 2 - 1);
-        game.display_hidden_field();
+        //game.display_hidden_field();
     }
     println!("GAME OVER!")
 }
