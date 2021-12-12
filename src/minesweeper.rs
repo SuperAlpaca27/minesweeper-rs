@@ -135,7 +135,7 @@ impl Minefield {
     }
 
     pub fn sweep_at(&mut self, x: usize, y: usize) -> Option<&Tile> {
-        if x > self.width || y > self.height {
+        if x >= self.width || y >= self.height {
             return None;
         }
 
@@ -226,7 +226,7 @@ impl Minefield {
     }
 
     pub fn toggle_flag(&mut self, x: usize, y: usize) {
-        if x > self.width || y > self.height {
+        if x >= self.width || y >= self.height {
             return;
         }
 
