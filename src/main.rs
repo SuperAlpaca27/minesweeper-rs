@@ -36,7 +36,7 @@ fn main() {
     while !game.check_win() {
         let x: usize = get_user_input("Enter x (col): ");
         let y: usize = get_user_input("Enter y (row): ");
-        let flag: String = get_user_input("Use flag (F)?: ");
+        let flag: String = get_user_input("Use flag (F to place flag, anything else for no flag)?: ");
 
         print!("\x1B[2J\x1B[1;1H");
         println!("{}, {}", game.width(), game.height());
