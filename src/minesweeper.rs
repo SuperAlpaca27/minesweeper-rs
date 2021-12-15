@@ -214,9 +214,17 @@ impl Minefield {
         for y in 0..self.height {
             for x in 0..self.width {
                 let shown = &self.shown_field[y][x];
-                if let TileState::Unknown(_) = *shown {
+                if let TileState::Unknown(flagged) = *shown {
                     let hidden = &self.hidden_field[y][x];
-                    if *hidden != Tile::Mine {
+                    if *hidden == Tile::Mine && !flagged {
+                        return false;
+                    }
+                    if let Tile::Number(_) = *hidden {
+                        if flagged {
+                        return false;
+                        }
+                    }
+                    if !flagged {
                         return false;
                     }
                 }

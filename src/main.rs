@@ -45,11 +45,11 @@ fn main() {
             game.toggle_flag(x, y);
         } else if let Some(tile) = game.sweep_at(x, y) {
             if tile == &Tile::Mine {
-                println!("Hit mine!");
                 game.display_field();
                 println!("{:=<1$}", "", WIDTH * 2 - 1);
                 //game.display_hidden_field();
-                break;
+                println!("Hit mine!");
+                std::process::exit(0);
             };
         }
 
@@ -57,5 +57,5 @@ fn main() {
         println!("{:=<1$}", "", WIDTH * 2 - 1);
         //game.display_hidden_field();
     }
-    println!("GAME OVER!")
+    println!("You won!")
 }
